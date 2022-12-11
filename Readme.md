@@ -1,5 +1,6 @@
 ## Execution environment
 OS: Windows10
+
 Python: 3.11.0
 
 ## Installation
@@ -17,7 +18,7 @@ pip install numpy
 
 This tool uses customtkinter as the framework for the window, and uses opencv to match the desktop target and obtain the mouse coordinates, and then uses PyAutoGUI for operation.
 
-![](Demo/dark.png)
+![](Demo/Dark.png)
 | _`AutoSoftwareUpgradeTool_GUI.py` on Windows 10 with Dark mode_
 
 ![](Demo/Light.png)
