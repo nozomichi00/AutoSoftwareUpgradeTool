@@ -369,7 +369,7 @@ class App(customtkinter.CTk):
         screen_width, screen_height = pyautogui.size()
         
         # Windows Window Size Interlock
-        if (screen_width != 1024 and screen_height != 768):
+        if (screen_width == 1024 and screen_height == 768):
             
             # Get Tool Window Size
             win_widthm = self.winfo_width()
@@ -468,7 +468,7 @@ class App(customtkinter.CTk):
                     # Module2: Before System Backup
                     ############################################################
                     # Check BackupMode
-                    if BackupMode == True:
+                    if BackupMode == 'on':
                         self.step_status_motor_textbox.delete("0.0", "end")
                         self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for execution of backup software.')
                         self.update()
