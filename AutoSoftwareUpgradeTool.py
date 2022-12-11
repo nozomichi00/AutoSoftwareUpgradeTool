@@ -1,21 +1,21 @@
-import customtkinter
-from tkinter import filedialog
+import cv2
 import os
-from time import sleep
-from ctypes import windll
 import shutil
 import pyautogui
-import cv2
 import numpy as np
-from datetime import datetime
+import customtkinter
+from time import sleep
+from ctypes import windll
 from subprocess import run
+from datetime import datetime
+from tkinter import filedialog
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
         # configure window
-        self.title("Auto Software Upgrade Tool")
+        self.title("Auto Software Upgrade Tool Ver. 1")
         self.iconbitmap('Images/AutoSoftwareUpgradeTool.ico')
         self.geometry(f"{800}x{600}")
         self.minsize(800, 600)
@@ -211,7 +211,7 @@ class App(customtkinter.CTk):
         self.second_frame_textbox = customtkinter.CTkTextbox(self.second_frame)
         self.second_frame_textbox.grid(row=1, column=0, padx=(20, 20), pady=(20, 20), sticky="nsew")
         self.second_frame_textbox.insert("0.0", '\
-            1. 程式運行時，螢幕保護程式將被禁用，包含台積電的Screen Lock。\n\
+            1. 程式運行時，螢幕保護程式將被禁用，包含XXXX的Screen Lock。\n\
             1. The screen saver will be disabled while the program is running.\n\
             \n\
             2. 程式運行時，“閾值率”被用來監控所有彈出視窗的匹配率(建議值70%~90%)。\n\
@@ -220,11 +220,11 @@ class App(customtkinter.CTk):
             \n\
             3. 當 SystemBackup 被選中時，下面列出的操作將被執行：\n\
             3. Actions listed below will be execute when SystemBackup checked:\n\
-            \t● backup\n\
+            \t● rcp backup\n\
             \t● Parameter\n\
-            \t● xxx.log\n\
+            \t● SuInstallHistory.log\n\
             \t● ver.txt\n\
-            \t● Software backup\n\
+            \t● Software backup(XXXXBackup.exe)\n\
             \n\
             4. “Step”文字的顏色:\n\
             4. The color of text "Step":\n\
@@ -237,7 +237,7 @@ class App(customtkinter.CTk):
             5. Do not operate mouse cursor, keyboard during Tool executing.\n\
             Every step will be executed by Tool.\n\
             \n\
-            by Lucas 20221210')
+            by Lucas 20221204')
         self.second_frame_textbox.configure(state="disabled")
         
         ##############################
@@ -252,20 +252,22 @@ class App(customtkinter.CTk):
         ##############################
         # set default values
         ##############################
-        # 預設框架顏色
+        # Default color
         self.appearance_mode_optionemenu.set("System")
+        
         # Modes: "System" (standard), "Dark", "Light"
         customtkinter.set_appearance_mode("System")
+        
         # Themes: "blue" (standard), "green", "dark-blue"
         customtkinter.set_default_color_theme("blue")
         
-        # 預設字體大小
+        # Default UI size
         self.scaling_optionemenu.set("100%")
         
-        # 預設透明度
+        # Default window transparency
         self.window_transparency_optionemenu.set("100%")
         
-        # 預設 Switch
+        # Default Switch
         self.main_switch_1.select()
         self.main_switch_1.configure(font=customtkinter.CTkFont(weight="bold"))
         self.operation_switch_win.select()
@@ -273,9 +275,11 @@ class App(customtkinter.CTk):
         self.operation_switch_tsmc.select()
         self.operation_switch_tsmc.configure(font=customtkinter.CTkFont(weight="bold"))
         
-        # 預設 Monitor
+        # Default Monitor
         self.step_status_motor_textbox.insert("0.0", "Tool Running Status Monitor")
         self.detail_status_motor_textbox.insert("0.0", "Detail Monitor")
+        
+        # Default threshold rate(%)
         self.operation_textbox.insert("0.0", "80")
         
         # 物件陣列
@@ -287,7 +291,7 @@ class App(customtkinter.CTk):
         main_textbox = [self.main_textbox_1, self.main_textbox_2, self.main_textbox_3, self.main_textbox_4, self.main_textbox_5,
                         self.main_textbox_6, self.main_textbox_7, self.main_textbox_8, self.main_textbox_9, self.main_textbox_10]
         
-        # 執行 home frame
+        # Show the home frame.
         self.select_frame_by_name("home")
         
     ##############################
@@ -357,11 +361,15 @@ class App(customtkinter.CTk):
         ############################################################
         # Module1: Check before program execution.
         ############################################################
+        self.step_status_motor_textbox.delete("0.0", "end")
+        self.step_status_motor_textbox.insert("0.0", 'Module1: Check before program execution.')
+        self.update()
+        
         # Get Windows Window Size
         screen_width, screen_height = pyautogui.size()
         
         # Windows Window Size Interlock
-        if (screen_width == 1024 and screen_height == 768):
+        if (screen_width != 1024 and screen_height != 768):
             
             # Get Tool Window Size
             win_widthm = self.winfo_width()
@@ -437,18 +445,18 @@ class App(customtkinter.CTk):
                     
                     # UpgradeFile UnZip
                     try:
-                        # 檔案名稱、檔案路徑變數設定
+                        # Get the file name(ISU**-****_Installer_00)
                         UpgradeFileName = UpgradeFileValue[UpgradeFileValue.rfind('\\') + 1:len(UpgradeFileValue) - 4]
+                        
+                        # Get the file path(C:\\Users\\Lucas\\Desktop\\TestUp\\)
                         UpgradeFilePath = UpgradeFileValue[0:UpgradeFileValue.rfind('\\') + 1]
                         
-                        # 第一層解壓縮
+                        # Unzip the upgrade file
                         run([Un7zPath, "x", UpgradeFileValue, "-aoa", ("-o" + UpgradeFilePath + UpgradeFileName)])
-                        
-                        # 第二層解壓縮
                         run([Un7zPath, "x", (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\InstallSoftware.EXE'), "-aoa", ("-o" + UpgradeFilePath + UpgradeFileName + '\\\\For_install')])
 
                         # Set UpgradeFilePath
-                        UpgradeFile = (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\Installer.exe')
+                        UpgradeFile = (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\XXXXInstaller.exe')
                     except:
                         self.detail_status_motor_textbox.delete("0.0", "end")
                         self.detail_status_motor_textbox.insert("0.0", 'The UpgradeFile decompression failed, please confirm whether 7z.exe is missing.')
@@ -462,12 +470,15 @@ class App(customtkinter.CTk):
                     # Check BackupMode
                     if BackupMode == True:
                         self.step_status_motor_textbox.delete("0.0", "end")
-                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' System Backup Mode.')
+                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for execution of backup software.')
                         self.update()
                         
                         # Open UpgradeFile
                         if os.path.exists(UpgradeFile):
                             os.startfile(UpgradeFile)
+                            self.step_status_motor_textbox.delete("0.0", "end")
+                            self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for beginning of backup.')
+                            self.update()
                         else:
                             self.detail_status_motor_textbox.delete("0.0", "end")
                             self.detail_status_motor_textbox.insert("0.0", 'UpgradeFile not found, please check if decompression failed.')
@@ -477,7 +488,7 @@ class App(customtkinter.CTk):
                         
                         # Copy Before SystemBackup Files
                         try:
-                            # Set Day
+                            # Set the current date
                             currentDateAndTime = datetime.now()
                             if len(str(currentDateAndTime.day)) < 2:
                                 currentDay = '0' + str(currentDateAndTime.day)
@@ -489,16 +500,16 @@ class App(customtkinter.CTk):
                             BeforeDayFolder = 'C:\\BackUp\\' + str(currentDay) + "_Step"+ str(i + 1) +'_SystemBackup'
                             if not os.path.exists(BeforeDayFolder):
                                 os.mkdir(BeforeDayFolder)
-                            if os.path.exists(BeforeDayFolder + '\\EquipmentData\\Recipe'):
-                                shutil.rmtree(BeforeDayFolder + '\\EquipmentData\\Recipe')
+                            if os.path.exists(BeforeDayFolder + '\\EquipmentData\\rcp'):
+                                shutil.rmtree(BeforeDayFolder + '\\EquipmentData\\rcp')
                             if os.path.exists(BeforeDayFolder + '\\EquipmentData\\Parameter'):
                                 shutil.rmtree(BeforeDayFolder + '\\EquipmentData\\Parameter')
                                 
                             # Copy Files
-                            shutil.copy2('C:\\\\SuInstallHistory.log', BeforeDayFolder)
-                            shutil.copy2('C:\\\\Bin\\ver.txt', BeforeDayFolder)
-                            shutil.copytree('C:\\\\EquipmentData\\Recipe', (BeforeDayFolder + '\\EquipmentData\\Recipe'))
-                            shutil.copytree('C:\\\\EquipmentData\\Parameter', (BeforeDayFolder + '\\EquipmentData\\Parameter'))
+                            shutil.copy2('C:\\XXXX\\SuInstallHistory.log', BeforeDayFolder)
+                            shutil.copy2('C:\\XXXX\\Bin\\ver.txt', BeforeDayFolder)
+                            shutil.copytree('C:\\XXXX\\EquipmentData\\rcp', (BeforeDayFolder + '\\EquipmentData\\rcp'))
+                            shutil.copytree('C:\\XXXX\\EquipmentData\\Parameter', (BeforeDayFolder + '\\EquipmentData\\Parameter'))
                         except:
                             self.detail_status_motor_textbox.delete("0.0", "end")
                             self.detail_status_motor_textbox.insert("0.0", 'Before System backup failed, please check if backup files are missing.')
@@ -506,33 +517,29 @@ class App(customtkinter.CTk):
                             self.update()
                             break
                         
-                        # SystemBackup For Installer.exe
+                        # SystemBackup For XXXXInstaller.exe
                         for j in range(1, 6):
-                            # 設定變數
                             BackupStatus = True
                             Count = 0
                             
-                            # 讀取檢查圖像，並轉換為 NumPy 陣列後再轉灰階
-                            CheckImage = cv2.imread(('Images/CheckBackupImage_' + str(j) + '.jpg'), cv2.IMREAD_UNCHANGED)
-                            CheckImage = cv2.cvtColor(CheckImage, cv2.COLOR_BGR2GRAY)
+                            # Read the image and convert it to a NumPy array, then convert it to grayscale
+                            CheckImage = cv2.imread(('Images/CheckBackupImage_' + str(j) + '.jpg'), cv2.IMREAD_GRAYSCALE)
                             
-                            # 匹配迴圈
                             while BackupStatus:
-                                # 獲取當前桌面並轉換為 NumPy 陣列後再轉灰階
+                                # Get the current desktop image and convert it to a NumPy array, then convert it to grayscale
                                 NowDesktop = pyautogui.screenshot()
-                                NowDesktop = cv2.cvtColor(np.array(NowDesktop), cv2.COLOR_RGB2BGR)
-                                NowDesktop = cv2.cvtColor(NowDesktop, cv2.COLOR_BGR2GRAY)
+                                NowDesktop = cv2.cvtColor(np.array(NowDesktop), cv2.COLOR_BGR2GRAY)
                                 
-                                # 計算匹配結果
+                                # Perform grayscale matching
                                 CheckResult = cv2.matchTemplate(NowDesktop, CheckImage, cv2.TM_CCOEFF_NORMED)
                                 
-                                # 取得匹配成功的參數
+                                # Get the maximum matching rate
                                 _, max_val, _, _ = cv2.minMaxLoc(CheckResult)
 
                                 # Check result threshold rate(%) 
                                 yloc, xloc = np.where(CheckResult >= threshold)
 
-                                # Detail Monitor
+                                # Change monitor message
                                 self.detail_status_motor_textbox.delete("0.0", "end")
                                 self.detail_status_motor_textbox.insert("0.0", 'Check: ' + str(j) + '/5, Elapsed time: ' + str(Count) + '/s, Threshold rate: ' + str(max_val)[2:4] + '%/' + str(threshold * 100)[0:2] + '%')
                                 self.update()
@@ -540,35 +547,38 @@ class App(customtkinter.CTk):
                                 # Check Array Count
                                 if len(yloc) != 0:
                                     if j == 1:
-                                        # 按備份
+                                        # Before Backup - Waiting for beginning of backup
                                         pyautogui.click((xloc[0] + 200), (yloc[0] + 20), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' System Backup Button.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for confirmation of backup agreement.')
                                         self.update()
                                         
                                     elif j == 2:
-                                        # 按同意
+                                        # Before Backup - Waiting for confirmation of backup agreement
                                         pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' System Backup Start.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for checking if it is running.')
                                         self.update()
                                         
                                     elif j == 3:
-                                        # 檢查是否有開始備份
+                                        # Before Backup - Waiting for checking if it is running
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Now is system backup.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for completion of backup.')
                                         self.update()
                                         
                                     elif j == 4:
-                                        # 按完成
+                                        # Before Backup - Waiting for completion of backup
                                         pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' System Backup Done.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for closing of backup software.')
                                         self.update()
                                         
                                     elif j == 5:
-                                        # 按關閉重啟
+                                        # efore Backup - Waiting for closing of backup software
                                         pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
+                                        self.step_status_motor_textbox.delete("0.0", "end")
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' SW Up - Waiting for execution of upgrade software.')
+                                        self.update()
                                         sleep(2)
                                         
                                         # Open UpgradeFile
@@ -581,7 +591,7 @@ class App(customtkinter.CTk):
                                             self.update()
                                             break
                                         
-                                    # Close while loop.
+                                    # Next backup loop
                                     BackupStatus = False
                                 else:
                                     sleep(1)
@@ -590,6 +600,9 @@ class App(customtkinter.CTk):
                         # Open UpgradeFile
                         if os.path.exists(UpgradeFile):
                             os.startfile(UpgradeFile)
+                            self.step_status_motor_textbox.delete("0.0", "end")
+                            self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for unlocking of upgrade button.')
+                            self.update()
                         else:
                             self.detail_status_motor_textbox.delete("0.0", "end")
                             self.detail_status_motor_textbox.insert("0.0", 'UpgradeFile not found, please check if decompression failed.')
@@ -600,18 +613,15 @@ class App(customtkinter.CTk):
                     ############################################################
                     # Module3: Software Upgrade
                     ############################################################
-                    # System Upgrade
                     for k in range(1, 7):
                         UpgradeStatus = True
                         Count = 0
-                            
-                        CheckImage = cv2.imread(('Images/CheckUpgradeImage_' + str(k) + '.jpg'), cv2.IMREAD_UNCHANGED)
-                        CheckImage = cv2.cvtColor(CheckImage, cv2.COLOR_BGR2GRAY)
+                        
+                        CheckImage = cv2.imread(('Images/CheckUpgradeImage_' + str(k) + '.jpg'), cv2.IMREAD_GRAYSCALE)
                         
                         while UpgradeStatus:
                             NowDesktop = pyautogui.screenshot()
-                            NowDesktop = cv2.cvtColor(np.array(NowDesktop), cv2.COLOR_RGB2BGR)
-                            NowDesktop = cv2.cvtColor(NowDesktop, cv2.COLOR_BGR2GRAY)
+                            NowDesktop = cv2.cvtColor(np.array(NowDesktop), cv2.COLOR_BGR2GRAY)
                             CheckResult = cv2.matchTemplate(NowDesktop, CheckImage, cv2.TM_CCOEFF_NORMED)
                             _, max_val, _, _ = cv2.minMaxLoc(CheckResult)
                             yloc, xloc = np.where(CheckResult >= threshold)
@@ -622,48 +632,51 @@ class App(customtkinter.CTk):
 
                             if len(yloc) != 0:
                                 if k == 1:
-                                    # 解除System Backup Mode
+                                    # SW Up - Waiting for unlocking of upgrade button
                                     pyautogui.click(xloc[0], yloc[0], 3)
                                     for l in range(1, 10):
                                         pyautogui.press('ctrl')
                                         sleep(0.1)
                                     self.step_status_motor_textbox.delete("0.0", "end")
-                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Upgrade Unlock.')
+                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for beginning of upgrade.')
                                     self.update()
                                         
                                 elif k == 2:
-                                    # 按升級
+                                    # SW Up - Waiting for beginning of upgrade
                                     pyautogui.click((xloc[0] + 200), (yloc[0] + 20), 3)
                                     self.step_status_motor_textbox.delete("0.0", "end")
-                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Upgrade Button.')
+                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for upgrade confirmation to agree.')
                                     self.update()
                                     
                                 elif k == 3:
-                                    # 按同意
+                                    # SW Up - Waiting for upgrade confirmation to agree
                                     pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                     self.step_status_motor_textbox.delete("0.0", "end")
-                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Upgrade Start.')
+                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for checking if it is running.')
                                     self.update()
                                     
                                 elif k == 4:
-                                    # 檢查是否有開始備份
+                                    # SW Up - Waiting for checking if it is running
                                     self.step_status_motor_textbox.delete("0.0", "end")
-                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Now is system update.')
+                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for completion of upgrade.')
                                     self.update()
                                     
                                 elif k == 5:
-                                    # 按完成
+                                    # SW Up - Waiting for completion of upgrade
                                     pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                     self.step_status_motor_textbox.delete("0.0", "end")
-                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Upgrade Done.')
+                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for closing of upgrade software.')
                                     self.update()
                                     
                                 elif k == 6:
-                                    # 按關閉
+                                    # SW Up - Waiting for closing of upgrade software
                                     pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
+                                    self.step_status_motor_textbox.delete("0.0", "end")
+                                    self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Upgrade completed.')
                                     self.update()
                                     sleep(2)
                                     
+                                # Next upgrade loop
                                 UpgradeStatus = False
                             else:
                                 sleep(1)
@@ -677,9 +690,8 @@ class App(customtkinter.CTk):
                 ############################################################
                 elif AfterBackup:
                     if ((i + 1) == 1):
-                        # Tool Running Status Monitor
                         self.step_status_motor_textbox.delete("0.0", "end")
-                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After System Backup.')
+                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After Backup - Waiting for execution of backup software.')
                         self.detail_status_motor_textbox.delete("0.0", "end")
                         self.detail_status_motor_textbox.insert("0.0", 'Please select an upgrade file(ISU32-*_Installer_00.exe)')
                         self.detail_status_motor_textbox.configure(text_color='red')
@@ -687,33 +699,33 @@ class App(customtkinter.CTk):
                         self.update()
                         break
                     else:
-                        # Tool Running Status Monitor
                         self.step_status_motor_textbox.delete("0.0", "end")
-                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After System Backup.')
+                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After Backup - Waiting for execution of backup software.')
                         self.update()
                         
-                        # Open Backup.exe
-                        if os.path.exists('c:\\\\BackUp\\\\Backup.exe'):
-                            os.startfile('c:\\\\BackUp\\\\Backup.exe')
+                        # Open XXXXBackup.exe
+                        if os.path.exists('c:\\\\BackUp\\\\XXXXBackup.exe'):
+                            os.startfile('c:\\\\BackUp\\\\XXXXBackup.exe')
+                            self.step_status_motor_textbox.delete("0.0", "end")
+                            self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After Backup - Waiting for beginning of backup.')
+                            self.update()
                         else:
                             self.detail_status_motor_textbox.delete("0.0", "end")
-                            self.detail_status_motor_textbox.insert("0.0", 'Backup.exe not found, please perform After System Backup manually.')
+                            self.detail_status_motor_textbox.insert("0.0", 'XXXXBackup.exe not found, please perform After System Backup manually.')
                             self.detail_status_motor_textbox.configure(text_color='red')
                             self.update()
                             break
                         
-                        # SystemBackup For Backup.exe
+                        # SystemBackup For XXXXBackup.exe
                         for m in range(1, 6):
                             BackupStatus = True
                             Count = 0
                             
-                            CheckImage = cv2.imread(('Images/CheckBackupImage_' + str(m) + '.jpg'), cv2.IMREAD_UNCHANGED)
-                            CheckImage = cv2.cvtColor(CheckImage, cv2.COLOR_BGR2GRAY)
+                            CheckImage = cv2.imread(('Images/CheckBackupImage_' + str(m) + '.jpg'), cv2.IMREAD_GRAYSCALE)
                             
                             while BackupStatus:
                                 NowDesktop = pyautogui.screenshot()
-                                NowDesktop = cv2.cvtColor(np.array(NowDesktop), cv2.COLOR_RGB2BGR)
-                                NowDesktop = cv2.cvtColor(NowDesktop, cv2.COLOR_BGR2GRAY)
+                                NowDesktop = cv2.cvtColor(np.array(NowDesktop), cv2.COLOR_BGR2GRAY)
                                 CheckResult = cv2.matchTemplate(NowDesktop, CheckImage, cv2.TM_CCOEFF_NORMED)
                                 _, max_val, _, _ = cv2.minMaxLoc(CheckResult)
                                 yloc, xloc = np.where(CheckResult >= threshold)
@@ -724,56 +736,59 @@ class App(customtkinter.CTk):
                                 
                                 if len(yloc) != 0:
                                     if m == 1:
-                                        # 按備份
+                                        # After Backup - Waiting for beginning of backup
                                         pyautogui.click((xloc[0] + 200), (yloc[0] + 20), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After SystemBackup Button.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After Backup - Waiting for confirmation of backup agreement.')
                                         self.update()
                                         
                                     elif m == 2:
-                                        # 按同意
+                                        # After Backup - Waiting for confirmation of backup agreement
                                         pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After SystemBackup Start.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After Backup - Waiting for checking if it is running.')
                                         self.update()
 
                                     elif m == 3:
-                                        # 檢查是否有開始備份
+                                        # After Backup - Waiting for checking if it is running
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' Now is After SystemBackup.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After Backup - Waiting for completion of backup.')
                                         self.update()
                                         
                                     elif m == 4:
-                                        # 按完成
+                                        # After Backup - Waiting for completion of backup
                                         pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After SystemBackup Done.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After Backup - Waiting for closing of backup software.')
                                         self.update()
                                         
                                     elif m == 5:
-                                        # 按關閉
+                                        # After Backup - Waiting for closing of backup software
                                         pyautogui.click((xloc[0] + 40), (yloc[0] + 15), 3)
                                         self.step_status_motor_textbox.delete("0.0", "end")
-                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' Software upgrade completed.')
+                                        self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After Backup - Backup completed.')
                                         self.update()
 
+                                        # Clse after backup mode
                                         AfterBackup = False
                                         break
-                                        
+                                    
+                                    # Next backup loop
                                     BackupStatus = False
                                 else:
                                     sleep(1)
                                     Count = Count + 1
-                # Next step no path.
+                # Next step no path
                 else:
                     break
-        # 解析度驗證失敗
+        # Checking window size failed
         else:
             self.step_status_motor_textbox.delete("0.0", "end")
             self.step_status_motor_textbox.insert("0.0", 'Window size Error')
             self.detail_status_motor_textbox.delete("0.0", "end")
             self.detail_status_motor_textbox.insert("0.0", 'Window size is not 1024 x 768.')
             self.detail_status_motor_textbox.configure(text_color='red')
+            self.update()
 
 if __name__ == "__main__":
     app = App()
