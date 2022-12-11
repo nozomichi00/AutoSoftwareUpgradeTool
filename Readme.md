@@ -28,6 +28,6 @@ This tool uses customtkinter as the framework for the window, and uses opencv to
 ![](Demo/Menu.png)
 | _`AutoSoftwareUpgradeTool.py` on Windows 10 with Light mode -> Menu frame_
 
-![](Demo/Dark_window transparency.png)
+![](Demo/Dark_window_transparency.png)
 | _`AutoSoftwareUpgradeTool.py` on Windows 10 with Dark window transparency 80% mode_
 ###
