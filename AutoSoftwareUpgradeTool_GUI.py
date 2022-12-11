@@ -361,7 +361,7 @@ class App(customtkinter.CTk):
         screen_width, screen_height = pyautogui.size()
         
         # Windows Window Size Interlock
-        if (screen_width != 1024 and screen_height != 768):
+        if (screen_width == 1024 and screen_height == 768):
             
             # Get Tool Window Size
             win_widthm = self.winfo_width()

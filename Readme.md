@@ -10,6 +10,7 @@ pip install customtkinter
 pip install thinker
 pip install PyAutoGUI
 pip install opencv-python
+pip install pillow
 pip install numpy
 ```
 
