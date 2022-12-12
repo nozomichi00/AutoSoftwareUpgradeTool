@@ -2,11 +2,11 @@ import cv2
 import os
 import shutil
 import pyautogui
+import subprocess
 import numpy as np
 import customtkinter
 from time import sleep
 from ctypes import windll
-from subprocess import run
 from datetime import datetime
 from tkinter import filedialog
 
@@ -17,12 +17,18 @@ class App(customtkinter.CTk):
         # configure window
         self.title("Auto Software Upgrade Tool Ver. 1")
         self.iconbitmap('Images/AutoSoftwareUpgradeTool.ico')
-        self.geometry(f"{800}x{600}")
-        self.minsize(800, 600)
+        self.geometry(f"{460}x{445}")
+        self.minsize(460, 445)
 
         # 設定3維框架排序
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
+        
+        # Modes: "System" (standard), "Dark", "Light"
+        customtkinter.set_appearance_mode("System")
+        
+        # Themes: "blue" (standard), "green", "dark-blue"
+        customtkinter.set_default_color_theme("blue")
         
         ##############################
         # Sidebar frame
@@ -33,37 +39,41 @@ class App(customtkinter.CTk):
 
         # Sidebar frame → Title
         self.sidebar_logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Menu bar", font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.sidebar_logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.sidebar_logo_label.grid(row=1, column=0, padx=20, pady=(20, 10), sticky="new")
 
         # Sidebar frame → Button
         self.sidebar_home_button = customtkinter.CTkButton(self.sidebar_frame, text="Home", command=self.home_button_event)
-        self.sidebar_home_button.grid(row=1, column=0, padx=20, pady=10)
+        self.sidebar_home_button.grid(row=2, column=0, padx=20, pady=10, sticky="new")
         self.sidebar_frame_2_button = customtkinter.CTkButton(self.sidebar_frame, text="Menu", command=self.frame_2_button_event)
-        self.sidebar_frame_2_button.grid(row=2, column=0, padx=20, pady=10)
+        self.sidebar_frame_2_button.grid(row=3, column=0, padx=20, pady=10, sticky="new")
         self.sidebar_frame_3_button = customtkinter.CTkButton(self.sidebar_frame, text="Setting",command=self.frame_3_button_event)
-        self.sidebar_frame_3_button.grid(row=3, column=0, padx=20, pady=10)
+        self.sidebar_frame_3_button.grid(row=4, column=0, padx=20, pady=10, sticky="new")
 
-        # Sidebar frame → 分隔線
-        self.sidebar_label = customtkinter.CTkLabel(self.sidebar_frame, text="")
-        self.sidebar_label.grid(row=4, column=0, padx=20, pady=(20, 10))
-
+        # Sidebar frame → Screen lock
+        self.sidebar_screen_lock_label = customtkinter.CTkLabel(self.sidebar_frame, text="Screen lock:", anchor="w")
+        self.sidebar_screen_lock_label.grid(row=5, column=0, padx=20, pady=(10, 0))
+        self.sidebar_screen_lock_win = customtkinter.CTkSwitch(self.sidebar_frame, text="Win", height=30, onvalue="on", offvalue="off", command=lambda: self.switch_event(self.sidebar_screen_lock_win))
+        self.sidebar_screen_lock_win.grid(row=6, column=0, padx=20, pady=(10, 0))
+        self.sidebar_screen_lock_tsmc = customtkinter.CTkSwitch(self.sidebar_frame, text="Tsmc", height=30, onvalue="on", offvalue="off", command=lambda: self.switch_event(self.sidebar_screen_lock_tsmc))
+        self.sidebar_screen_lock_tsmc.grid(row=7, column=0, padx=20, pady=(10, 10))
+        
         # Sidebar frame → Color Mode(Appearance)
-        self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Color Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"], command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 10))
-
+        self.sidebar_appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Color Mode:", anchor="w")
+        self.sidebar_appearance_mode_label.grid(row=8, column=0, padx=20, pady=(10, 0))
+        self.sidebar_appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"], command=self.change_appearance_mode_event)
+        self.sidebar_appearance_mode_optionemenu.grid(row=9, column=0, padx=20, pady=(10, 10))
+        
         # Sidebar frame → UI Scaling
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="UI Scaling:", anchor="w")
-        self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
-        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["80%", "90%", "100%", "110%", "120%"], command=self.change_scaling_event)
-        self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 10))
+        self.scaling_label.grid(row=10, column=0, padx=20, pady=(10, 0))
+        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["70%", "80%", "90%", "100%", "110%", "120%"], command=self.change_scaling_event)
+        self.scaling_optionemenu.grid(row=11, column=0, padx=20, pady=(10, 10))
 
         # Sidebar frame → WT Scaling(Window Transparency)
-        self.window_transparency_label = customtkinter.CTkLabel(self.sidebar_frame, text="WT Scaling:", anchor="w")
-        self.window_transparency_label.grid(row=9, column=0, padx=20, pady=(10, 0))
-        self.window_transparency_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["60%", "70%", "80%", "90%", "100%"], command=self.change_window_transparency_event)
-        self.window_transparency_optionemenu.grid(row=10, column=0, padx=20, pady=(10, 10))
+        self.sidebar_window_transparency_label = customtkinter.CTkLabel(self.sidebar_frame, text="WT Scaling:", anchor="w")
+        self.sidebar_window_transparency_label.grid(row=12, column=0, padx=20, pady=(10, 0))
+        self.sidebar_window_transparency_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["60%", "70%", "80%", "90%", "100%"], command=self.change_window_transparency_event)
+        self.sidebar_window_transparency_optionemenu.grid(row=13, column=0, padx=20, pady=(10, 10))
         
         ##############################
         # home frame
@@ -108,25 +118,25 @@ class App(customtkinter.CTk):
         self.main_label_10.grid(row=10, column=0, padx=(20, 0), pady=(10, 0), sticky="wn")
         
         # Main frame → File Path
-        self.main_textbox_1 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_1 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_1.grid(row=1, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_2 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_2 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_2.grid(row=2, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_3 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_3 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_3.grid(row=3, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_4 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_4 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_4.grid(row=4, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_5 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_5 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_5.grid(row=5, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_6 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_6 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_6.grid(row=6, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_7 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_7 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_7.grid(row=7, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_8 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_8 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_8.grid(row=8, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_9 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_9 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_9.grid(row=9, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
-        self.main_textbox_10 = customtkinter.CTkTextbox(self.main_frame, width=300, height=30, activate_scrollbars=False)
+        self.main_textbox_10 = customtkinter.CTkTextbox(self.main_frame, width=150, height=30, activate_scrollbars=False)
         self.main_textbox_10.grid(row=10, column=1, padx=(20, 0), pady=(10, 0), sticky="wn")
         
         # Main frame → Select File
@@ -177,25 +187,17 @@ class App(customtkinter.CTk):
         self.operation_frame = customtkinter.CTkFrame(self.home_frame)
         self.operation_frame.grid(row=3, column=0, padx=(20, 20), pady=(10, 20), sticky="nsew")
         self.operation_frame.grid_rowconfigure(1, weight=1)
-        self.operation_frame.grid_columnconfigure(4, weight=1)
+        self.operation_frame.grid_columnconfigure(3, weight=1)
         
         # operation frame → Start button
         self.operation_button_start = customtkinter.CTkButton(self.operation_frame, text="Start", width=70, height=30, font=customtkinter.CTkFont(weight="bold"), command=lambda: self.start_event(screen_switch, main_label, main_switch, main_textbox, self.operation_textbox))
-        self.operation_button_start.grid(row=0, column=0, padx=(20, 20), pady=(10, 10), sticky="w")
+        self.operation_button_start.grid(row=0, column=0, padx=(70, 20), pady=(10, 10), sticky="w")
         
         # operation frame → Threshold rate
         self.operation_label_1 = customtkinter.CTkLabel(self.operation_frame, text="Threshold rate(%):", height=30, font=customtkinter.CTkFont(weight="bold"))
-        self.operation_label_1.grid(row=0, column=1, padx=(0, 0), pady=(10, 10), sticky="w")
+        self.operation_label_1.grid(row=0, column=1, padx=(20, 0), pady=(10, 10), sticky="w")
         self.operation_textbox = customtkinter.CTkTextbox(self.operation_frame, width=35, height=30, activate_scrollbars=False, font=customtkinter.CTkFont(weight="bold"))
-        self.operation_textbox.grid(row=0, column=1, padx=(130, 0), pady=(10, 10))
-        
-        # operation frame → Screen lock
-        self.operation_label_2 = customtkinter.CTkLabel(self.operation_frame, text="Screen lock:", height=30, font=customtkinter.CTkFont(weight="bold"))
-        self.operation_label_2.grid(row=0, column=2, padx=(13, 0), pady=(10, 10), sticky="w")
-        self.operation_switch_win = customtkinter.CTkSwitch(self.operation_frame, text="Win", height=30, onvalue="on", offvalue="off", command=lambda: self.switch_event(self.operation_switch_win))
-        self.operation_switch_win.grid(row=0, column=3, padx=(7, 0), pady=(10, 10), sticky="w")
-        self.operation_switch_tsmc = customtkinter.CTkSwitch(self.operation_frame, text="Tsmc", height=30, onvalue="on", offvalue="off", command=lambda: self.switch_event(self.operation_switch_tsmc))
-        self.operation_switch_tsmc.grid(row=0, column=3, padx=(90, 0), pady=(10, 10))
+        self.operation_textbox.grid(row=0, column=2, padx=(10, 0), pady=(10, 10))
         
         ##############################
         # second frame
@@ -211,7 +213,7 @@ class App(customtkinter.CTk):
         self.second_frame_textbox = customtkinter.CTkTextbox(self.second_frame)
         self.second_frame_textbox.grid(row=1, column=0, padx=(20, 20), pady=(20, 20), sticky="nsew")
         self.second_frame_textbox.insert("0.0", '\
-            1. 程式運行時，螢幕保護程式將被禁用，包含XXXX的Screen Lock。\n\
+            1. 程式運行時，螢幕保護程式將被禁用，包含台積電的Screen Lock。\n\
             1. The screen saver will be disabled while the program is running.\n\
             \n\
             2. 程式運行時，“閾值率”被用來監控所有彈出視窗的匹配率(建議值70%~90%)。\n\
@@ -220,11 +222,11 @@ class App(customtkinter.CTk):
             \n\
             3. 當 SystemBackup 被選中時，下面列出的操作將被執行：\n\
             3. Actions listed below will be execute when SystemBackup checked:\n\
-            \t● rcp backup\n\
+            \t● Recipe backup\n\
             \t● Parameter\n\
             \t● SuInstallHistory.log\n\
             \t● ver.txt\n\
-            \t● Software backup(XXXXBackup.exe)\n\
+            \t● Software backup(Backup.exe)\n\
             \n\
             4. “Step”文字的顏色:\n\
             4. The color of text "Step":\n\
@@ -253,27 +255,22 @@ class App(customtkinter.CTk):
         # set default values
         ##############################
         # Default color
-        self.appearance_mode_optionemenu.set("System")
-        
-        # Modes: "System" (standard), "Dark", "Light"
-        customtkinter.set_appearance_mode("System")
-        
-        # Themes: "blue" (standard), "green", "dark-blue"
-        customtkinter.set_default_color_theme("blue")
+        self.sidebar_appearance_mode_optionemenu.set("System")
         
         # Default UI size
-        self.scaling_optionemenu.set("100%")
+        self.scaling_optionemenu.set("70%")
+        customtkinter.set_widget_scaling(0.7)
         
         # Default window transparency
-        self.window_transparency_optionemenu.set("100%")
+        self.sidebar_window_transparency_optionemenu.set("100%")
         
         # Default Switch
         self.main_switch_1.select()
         self.main_switch_1.configure(font=customtkinter.CTkFont(weight="bold"))
-        self.operation_switch_win.select()
-        self.operation_switch_win.configure(font=customtkinter.CTkFont(weight="bold"))
-        self.operation_switch_tsmc.select()
-        self.operation_switch_tsmc.configure(font=customtkinter.CTkFont(weight="bold"))
+        self.sidebar_screen_lock_win.select()
+        self.sidebar_screen_lock_win.configure(font=customtkinter.CTkFont(weight="bold"))
+        self.sidebar_screen_lock_tsmc.select()
+        self.sidebar_screen_lock_tsmc.configure(font=customtkinter.CTkFont(weight="bold"))
         
         # Default Monitor
         self.step_status_motor_textbox.insert("0.0", "Tool Running Status Monitor")
@@ -283,7 +280,7 @@ class App(customtkinter.CTk):
         self.operation_textbox.insert("0.0", "80")
         
         # 物件陣列
-        screen_switch = [self.operation_switch_win, self.operation_switch_tsmc]
+        screen_switch = [self.sidebar_screen_lock_win, self.sidebar_screen_lock_tsmc]
         main_label = [self.main_label_1, self.main_label_2, self.main_label_3, self.main_label_4, self.main_label_5,
                       self.main_label_6, self.main_label_7, self.main_label_8, self.main_label_8, self.main_label_10,]
         main_switch = [self.main_switch_1, self.main_switch_2, self.main_switch_3, self.main_switch_4, self.main_switch_5,
@@ -299,7 +296,7 @@ class App(customtkinter.CTk):
     ##############################
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
-
+        
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
@@ -452,11 +449,11 @@ class App(customtkinter.CTk):
                         UpgradeFilePath = UpgradeFileValue[0:UpgradeFileValue.rfind('\\') + 1]
                         
                         # Unzip the upgrade file
-                        run([Un7zPath, "x", UpgradeFileValue, "-aoa", ("-o" + UpgradeFilePath + UpgradeFileName)])
-                        run([Un7zPath, "x", (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\InstallSoftware.EXE'), "-aoa", ("-o" + UpgradeFilePath + UpgradeFileName + '\\\\For_install')])
+                        subprocess.run([Un7zPath, "x", UpgradeFileValue, "-aoa", ("-o" + UpgradeFilePath + UpgradeFileName)])
+                        subprocess.run([Un7zPath, "x", (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\InstallSoftware.EXE'), "-aoa", ("-o" + UpgradeFilePath + UpgradeFileName + '\\\\For_install')])
 
                         # Set UpgradeFilePath
-                        UpgradeFile = (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\XXXXInstaller.exe')
+                        UpgradeFile = (UpgradeFilePath + UpgradeFileName + '\\\\For_install\\\\Installer.exe')
                     except:
                         self.detail_status_motor_textbox.delete("0.0", "end")
                         self.detail_status_motor_textbox.insert("0.0", 'The UpgradeFile decompression failed, please confirm whether 7z.exe is missing.')
@@ -475,7 +472,7 @@ class App(customtkinter.CTk):
                         
                         # Open UpgradeFile
                         if os.path.exists(UpgradeFile):
-                            os.startfile(UpgradeFile)
+                            subprocess.Popen(UpgradeFile, shell=True)
                             self.step_status_motor_textbox.delete("0.0", "end")
                             self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' Before Backup - Waiting for beginning of backup.')
                             self.update()
@@ -490,25 +487,26 @@ class App(customtkinter.CTk):
                         try:
                             # Set the current date
                             currentDateAndTime = datetime.now()
-                            if len(str(currentDateAndTime.day)) < 2:
-                                currentDay = '0' + str(currentDateAndTime.day)
-                            currentDay = str(currentDateAndTime.year) + str(currentDateAndTime.month) + currentDay
-                            
+                            if (currentDateAndTime.day < 10):
+                                currentDay = str(currentDateAndTime.year) + str(currentDateAndTime.month) + '0' + str(currentDateAndTime.day)
+                            else:
+                                currentDay = str(currentDateAndTime.year) + str(currentDateAndTime.month) + str(currentDateAndTime.day)
+
                             # Check Folder
                             if not os.path.exists('C:\\BackUp'):
                                 os.mkdir('C:\\BackUp')
                             BeforeDayFolder = 'C:\\BackUp\\' + str(currentDay) + "_Step"+ str(i + 1) +'_SystemBackup'
                             if not os.path.exists(BeforeDayFolder):
                                 os.mkdir(BeforeDayFolder)
-                            if os.path.exists(BeforeDayFolder + '\\EquipmentData\\rcp'):
-                                shutil.rmtree(BeforeDayFolder + '\\EquipmentData\\rcp')
+                            if os.path.exists(BeforeDayFolder + '\\EquipmentData\\Recipe'):
+                                shutil.rmtree(BeforeDayFolder + '\\EquipmentData\\Recipe')
                             if os.path.exists(BeforeDayFolder + '\\EquipmentData\\Parameter'):
                                 shutil.rmtree(BeforeDayFolder + '\\EquipmentData\\Parameter')
                                 
                             # Copy Files
                             shutil.copy2('C:\\XXXX\\SuInstallHistory.log', BeforeDayFolder)
                             shutil.copy2('C:\\XXXX\\Bin\\ver.txt', BeforeDayFolder)
-                            shutil.copytree('C:\\XXXX\\EquipmentData\\rcp', (BeforeDayFolder + '\\EquipmentData\\rcp'))
+                            shutil.copytree('C:\\XXXX\\EquipmentData\\Recipe', (BeforeDayFolder + '\\EquipmentData\\Recipe'))
                             shutil.copytree('C:\\XXXX\\EquipmentData\\Parameter', (BeforeDayFolder + '\\EquipmentData\\Parameter'))
                         except:
                             self.detail_status_motor_textbox.delete("0.0", "end")
@@ -517,7 +515,7 @@ class App(customtkinter.CTk):
                             self.update()
                             break
                         
-                        # SystemBackup For XXXXInstaller.exe
+                        # SystemBackup For Installer.exe
                         for j in range(1, 6):
                             BackupStatus = True
                             Count = 0
@@ -583,7 +581,7 @@ class App(customtkinter.CTk):
                                         
                                         # Open UpgradeFile
                                         if os.path.exists(UpgradeFile):
-                                            os.startfile(UpgradeFile)
+                                            subprocess.Popen(UpgradeFile, shell=True)
                                         else:
                                             self.detail_status_motor_textbox.delete("0.0", "end")
                                             self.detail_status_motor_textbox.insert("0.0", 'UpgradeFile not found, please check if decompression failed.')
@@ -599,7 +597,7 @@ class App(customtkinter.CTk):
                     else:
                         # Open UpgradeFile
                         if os.path.exists(UpgradeFile):
-                            os.startfile(UpgradeFile)
+                            subprocess.Popen(UpgradeFile, shell=True)
                             self.step_status_motor_textbox.delete("0.0", "end")
                             self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' SW Up - Waiting for unlocking of upgrade button.')
                             self.update()
@@ -703,20 +701,20 @@ class App(customtkinter.CTk):
                         self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After Backup - Waiting for execution of backup software.')
                         self.update()
                         
-                        # Open XXXXBackup.exe
-                        if os.path.exists('c:\\\\BackUp\\\\XXXXBackup.exe'):
-                            os.startfile('c:\\\\BackUp\\\\XXXXBackup.exe')
+                        # Open Backup.exe
+                        if os.path.exists('c:\\BackUp\\Backup.exe'):
+                            subprocess.Popen('c:\\BackUp\\Backup.exe', shell=True)
                             self.step_status_motor_textbox.delete("0.0", "end")
-                            self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i + 1) + ' After Backup - Waiting for beginning of backup.')
+                            self.step_status_motor_textbox.insert("0.0", 'Step:' + str(i) + ' After Backup - Waiting for beginning of backup.')
                             self.update()
                         else:
                             self.detail_status_motor_textbox.delete("0.0", "end")
-                            self.detail_status_motor_textbox.insert("0.0", 'XXXXBackup.exe not found, please perform After System Backup manually.')
+                            self.detail_status_motor_textbox.insert("0.0", 'Backup.exe not found, please perform After System Backup manually.')
                             self.detail_status_motor_textbox.configure(text_color='red')
                             self.update()
                             break
                         
-                        # SystemBackup For XXXXBackup.exe
+                        # SystemBackup For Backup.exe
                         for m in range(1, 6):
                             BackupStatus = True
                             Count = 0
@@ -783,8 +781,6 @@ class App(customtkinter.CTk):
                     break
         # Checking window size failed
         else:
-            self.step_status_motor_textbox.delete("0.0", "end")
-            self.step_status_motor_textbox.insert("0.0", 'Window size Error')
             self.detail_status_motor_textbox.delete("0.0", "end")
             self.detail_status_motor_textbox.insert("0.0", 'Window size is not 1024 x 768.')
             self.detail_status_motor_textbox.configure(text_color='red')
